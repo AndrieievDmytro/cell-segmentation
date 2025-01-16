@@ -1,0 +1,11 @@
+kedro
+tensorflow
+numpy==1.26.0
+opencv-python
+matplotlib
+scikit-learn
+tqdm
+pytest
+jupyterlab
+kedro-viz
+scikit-learn
