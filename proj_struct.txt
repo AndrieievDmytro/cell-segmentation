@@ -1,0 +1,58 @@
+cell_analysis/
+├── conf/
+│   ├── base/
+│   │   ├── catalog.yml           # Data catalog definitions
+│   │   ├── parameters.yml        # Global pipeline parameters
+│   │   ├── logging.yml           # Logging configuration
+│   │   ├── credentials.yml       # Sensitive credentials (ignored by Git)
+│   └── local/
+│       ├── catalog.yml           # Local data catalog overrides
+│       ├── parameters.yml        # Local pipeline parameters overrides
+│       ├── credentials.yml       # Local credentials
+├── data/
+│   ├── 01_raw/                   # Raw data
+│   ├── 02_intermediate/          # Intermediate data (e.g., preprocessed)
+│   ├── 03_primary/               # Processed data ready for model training
+│   ├── 04_feature/               # Feature-engineered data
+│   ├── 05_model_input/           # Data fed into the model
+│   ├── 06_model_output/          # Model predictions
+│   ├── 07_model_evaluation/      # Evaluation results
+│   └── 08_reporting/             # Final reports or visualizations
+├── logs/                         # Log files
+├── notebooks/                    # Jupyter notebooks for experiments
+├── src/
+│   ├── cell_analysis/
+│   │   ├── pipelines/
+│   │   │   ├── data/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── pipeline.py      # Data preprocessing pipeline
+│   │   │   │   ├── nodes.py         # Data preprocessing nodes
+│   │   │   ├── model/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── pipeline.py      # Model training pipeline
+│   │   │   │   ├── nodes.py         # Model training nodes
+│   │   │   │   ├── train.py         # Script for training the U-Net model
+│   │   │   ├── evaluation/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── pipeline.py      # Evaluation pipeline
+│   │   │   │   ├── nodes.py         # Evaluation nodes
+│   │   │   │   ├── evaluate.py      # Model evaluation script
+│   │   │   │   ├── predict.py       # Inference script
+│   │   ├── settings.py              # Kedro project settings
+│   ├── tests/
+│   │   ├── pipelines/
+│   │   │   ├── data/
+│   │   │   │   ├── test_nodes.py    # Unit tests for data preprocessing
+│   │   │   ├── model/
+│   │   │   │   ├── test_nodes.py    # Unit tests for model training
+│   │   │   ├── evaluation/
+│   │   │   │   ├── test_nodes.py    # Unit tests for evaluation and inference
+│   ├── __init__.py
+│   ├── run.py                      # Main entry point for Kedro
+│   ├── cli.py                      # CLI commands for Kedro
+│   ├── hooks.py                    # Project-specific hooks
+│   ├── register_pipelines.py       # Pipeline registration
+├── .gitignore                      # Files to ignore in version control
+├── pyproject.toml                  # Project configuration
+├── README.md                       # Project documentation
+└── requirements.txt                # Python dependencies
