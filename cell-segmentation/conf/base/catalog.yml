@@ -1,0 +1,25 @@
+livecell_test_raw:
+  type: kedro_datasets.pillow.image_dataset.ImageDataset
+  filepath: E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_test
+  # filepath: E:\diploma_proj_latest\cell-segmentation\.data\01_raw\livecell_test\
+  save_args:
+    format: TIFF
+
+livecell_train_raw:
+  type: kedro_datasets.pillow.image_dataset.ImageDataset
+  filepath: E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_train
+  # filepath: E:\diploma_proj_latest\cell-segmentation\.data\01_raw\livecell_train\
+  save_args:
+    format: TIFF
+
+livecell_test_resized:
+  type: kedro_datasets.pillow.image_dataset.ImageDataset
+  filepath: E:\diploma_proj_latest\cell-segmentation\.data\02_intermediate\livecell_test\
+  save_args:
+    format: TIFF
+
+livecell_train_resized:
+  type: kedro_datasets.pillow.image_dataset.ImageDataset
+  filepath: E:\diploma_proj_latest\cell-segmentation\.data\02_intermediate\livecell_train\
+  save_args:
+    format: TIFF
