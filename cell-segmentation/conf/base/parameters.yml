@@ -7,3 +7,15 @@ output_folder_test: "E:/diploma_proj_latest/cell-segmentation/.data/02_intermedi
 
 input_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_train"
 output_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate/livecell_train"
+
+
+mask_output_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_train"
+mask_output_folder_test:  "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_test"
+
+norm_output_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_train"
+norm_output_folder_test: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_test"
+
+
+normalization:
+  mean: 0.5
+  std: 0.2
