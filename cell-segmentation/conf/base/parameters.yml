@@ -19,6 +19,15 @@ norm_output_folder_test: "E:/diploma_proj_latest/cell-segmentation/.data/03_proc
 
 mask_threshold: 128
 
+# Split parameters for train and val
+split_parameters:
+  input_folder_intermediate: "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate"
+  output_folder_processed: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed"
+  train_ratio: 0.8  # 80% train, 20% validation
+  random_seed: 42
+  val_norm_output_folder: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_val"
+  val_mask_output_folder: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_val"
+
 # Parameters for normalization
 normalization:
   mean: 0.5
@@ -37,12 +46,3 @@ training_parameters:
   epochs:         50
   learning_rate:  0.001
   num_classes:    8
-
-# Split parameters for train and val
-split_parameters:
-  input_folder_intermediate: "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate"
-  output_folder_processed: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed"
-  train_ratio: 0.8  # 80% train, 20% validation
-  random_seed: 42
-  val_norm_output_folder: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_val"
-  val_mask_output_folder: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_val"

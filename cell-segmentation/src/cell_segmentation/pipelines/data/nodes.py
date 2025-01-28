@@ -44,7 +44,6 @@ def resize_images(input_folder, output_folder, target_size):
 
     return str(output_path)  # Return the output folder path
 
-
 def split_data(files: List[Path], train_ratio: float, random_seed: int) -> Tuple[List[Path], List[Path]]:
     """
     Splits a list of files into train and validation sets.
@@ -63,60 +62,6 @@ def split_data(files: List[Path], train_ratio: float, random_seed: int) -> Tuple
     train_files = files[:split_idx]
     val_files = files[split_idx:]
     return train_files, val_files
-
-def create_masks_for_train(input_folder, output_folder, split_parameters, threshold=128):
-    print(f"Input folder: {input_folder}, Output folder: {output_folder}, Threshold: {threshold}")
-    input_path = Path(input_folder)
-    output_path = Path(output_folder)
-
-    train_ratio = split_parameters["train_ratio"]
-    random_seed = split_parameters["random_seed"]
-
-    train_output_path = output_path / "train"
-    val_output_path = output_path / "val"
-    train_output_path.mkdir(parents=True, exist_ok=True)
-    val_output_path.mkdir(parents=True, exist_ok=True)
-
-    for class_folder in input_path.iterdir():
-        if class_folder.is_dir():
-            class_name = class_folder.name
-            train_class_folder = train_output_path / class_name
-            val_class_folder = val_output_path / class_name
-            train_class_folder.mkdir(parents=True, exist_ok=True)
-            val_class_folder.mkdir(parents=True, exist_ok=True)
-
-            print(f"Processing class: {class_name}")
-            files = sorted(list(class_folder.glob("*.tif")))
-
-            # Use the unified split_data function
-            train_files, val_files = split_data(files, train_ratio, random_seed)
-
-            for file in train_files:
-                try:
-                    with Image.open(file) as img:
-                        gray = img.convert("L")
-                        arr = np.array(gray, dtype=np.uint8)
-                        mask_arr = np.where(arr > threshold, 255, 0).astype(np.uint8)
-                        mask_img = Image.fromarray(mask_arr, mode="L")
-                        mask_img.save(train_class_folder / file.name, format="TIFF", compression="tiff_lzw")
-                        print(f"Train mask created: {file.name}")
-                except Exception as e:
-                    print(f"Error processing {file.name}: {e}")
-
-            for file in val_files:
-                try:
-                    with Image.open(file) as img:
-                        gray = img.convert("L")
-                        arr = np.array(gray, dtype=np.uint8)
-                        mask_arr = np.where(arr > threshold, 255, 0).astype(np.uint8)
-                        mask_img = Image.fromarray(mask_arr, mode="L")
-                        mask_img.save(val_class_folder / file.name, format="TIFF", compression="tiff_lzw")
-                        print(f"Validation mask created: {file.name}")
-                except Exception as e:
-                    print(f"Error processing {file.name}: {e}")
-
-    print("Mask creation and splitting for training data completed.")
-    return str(output_path)
 
 def normalize_image_array(arr, mean=0.5, std=0.2):
     """
@@ -139,7 +84,7 @@ def save_normalized_array(arr, output_path):
     """
     np.save(output_path, arr)  # Save as .npy file
 
-def normalize_image_array(arr, mean=0.5, std=0.2):
+def normalize_image_array(arr, mean, std):
     """
     Normalize the image array to the specified mean and standard deviation,
     ensuring the output is scaled to [0, 1].
@@ -150,11 +95,16 @@ def normalize_image_array(arr, mean=0.5, std=0.2):
     arr = np.clip(arr, 0, 1)  # Clip values to [0, 1]
     return arr
 
-def normalize_images_for_test(input_folder, output_folder, mean=0.5, std=0.2):
+# def normalize_images_for_test(input_folder, output_folder, mean=0.5, std=0.2):
+def normalize_images_for_test(input_folder, output_folder, normalization):
     """
     Normalize test images without splitting and save as .npy files.
     """
     print(f"Input folder: {input_folder}, Output folder: {output_folder}")
+    # Retrieve normalization parameters
+    mean = normalization["mean"]
+    std = normalization["std"]
+    print(f"mean: {mean}, std: {std}")
     input_path = Path(input_folder)
     output_path = Path(output_folder)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -179,11 +129,16 @@ def normalize_images_for_test(input_folder, output_folder, mean=0.5, std=0.2):
     print("Normalization for test data completed.")
     return str(output_path)
 
-def normalize_images_for_train(input_folder, output_folder, split_parameters, mean=0.5, std=0.2):
+# def normalize_images_for_train(input_folder, output_folder, split_parameters, mean=0.5, std=0.2):
+def normalize_images_for_train(input_folder, output_folder, split_parameters, normalization):
     """
     Normalize training images, split into train/validation sets, and save as .npy files.
     """
     print(f"Input folder: {input_folder}, Output folder: {output_folder}")
+    # Retrieve normalization parameters
+    mean = normalization["mean"]
+    std = normalization["std"]
+    print(f"mean: {mean}, std: {std}")
     input_path = Path(input_folder)
     output_path = Path(output_folder)
 
@@ -240,9 +195,30 @@ def normalize_images_for_train(input_folder, output_folder, split_parameters, me
     print("Normalization and splitting for training data completed.")
     return str(output_path)
 
+def process_class_folder(class_folder, output_base_path, threshold, mode, files=None):
+    class_name = class_folder.name
+    output_class_folder = output_base_path / class_name
+    output_class_folder.mkdir(parents=True, exist_ok=True)
+
+    if files is None:
+        files = class_folder.glob("*.tif")
+
+    print(f"Processing class: {class_name} for {mode}")
+
+    for file in files:
+        try:
+            with Image.open(file) as img:
+                gray = img.convert("L")
+                arr = np.array(gray, dtype=np.uint8)
+                mask_arr = np.where(arr > threshold, 255, 0).astype(np.uint8)
+                mask_img = Image.fromarray(mask_arr, mode="L")
+                mask_img.save(output_class_folder / file.name, format="TIFF", compression="tiff_lzw")
+                print(f"{mode.capitalize()} mask created: {file.name}")
+        except Exception as e:
+            print(f"Error processing {file.name}: {e}")
 
 
-def create_masks_for_test(input_folder, output_folder, threshold=128):
+def create_masks_for_test(input_folder, output_folder, threshold):
     print(f"Input folder: {input_folder}, Output folder: {output_folder}, Threshold: {threshold}")
     input_path = Path(input_folder)
     output_path = Path(output_folder)
@@ -250,21 +226,31 @@ def create_masks_for_test(input_folder, output_folder, threshold=128):
 
     for class_folder in input_path.iterdir():
         if class_folder.is_dir():
-            class_name = class_folder.name
-            output_class_folder = output_path / class_name
-            output_class_folder.mkdir(parents=True, exist_ok=True)
+            process_class_folder(class_folder, output_path, threshold, "test")
 
-            print(f"Processing class: {class_name}")
-            for file in class_folder.glob("*.tif"):
-                try:
-                    with Image.open(file) as img:
-                        gray = img.convert("L")
-                        arr = np.array(gray, dtype=np.uint8)
-                        mask_arr = np.where(arr > threshold, 255, 0).astype(np.uint8)
-                        mask_img = Image.fromarray(mask_arr, mode="L")
-                        mask_img.save(output_class_folder / file.name, format="TIFF", compression="tiff_lzw")
-                        print(f"Test mask created: {file.name}")
-                except Exception as e:
-                    print(f"Error processing {file.name}: {e}")
     print("Mask creation for test data completed.")
-    return str(output_path)  # Return the output folder path
+    return str(output_path)
+
+def create_masks_for_train(input_folder, output_folder, split_parameters, threshold):
+    print(f"Input folder: {input_folder}, Output folder: {output_folder}, Threshold: {threshold}")
+    input_path = Path(input_folder)
+    output_path = Path(output_folder)
+
+    train_ratio = split_parameters["train_ratio"]
+    random_seed = split_parameters["random_seed"]
+
+    train_output_path = output_path / "train"
+    val_output_path = output_path / "val"
+    train_output_path.mkdir(parents=True, exist_ok=True)
+    val_output_path.mkdir(parents=True, exist_ok=True)
+
+    for class_folder in input_path.iterdir():
+        if class_folder.is_dir():
+            files = sorted(list(class_folder.glob("*.tif")))
+            train_files, val_files = split_data(files, train_ratio, random_seed)
+
+            process_class_folder(class_folder, train_output_path, threshold, "train", train_files)
+            process_class_folder(class_folder, val_output_path, threshold, "val", val_files)
+
+    print("Mask creation and splitting for training data completed.")
+    return str(output_path)
