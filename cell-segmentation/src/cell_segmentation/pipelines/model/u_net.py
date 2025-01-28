@@ -1,62 +1,55 @@
-import tensorflow as tf
-from keras import Model, Input
-from keras import layers
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-def unet_model(input_shape=(512, 512, 1), num_classes=1):
-    inputs = Input(input_shape)
+class UNet(nn.Module):
+    def __init__(self, input_channels=1, num_classes=8):
+        super(UNet, self).__init__()
 
-    # Encoder
-    c1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
-    c1 = layers.Dropout(0.1)(c1)
-    c1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c1)
-    p1 = layers.MaxPooling2D((2, 2))(c1)
+        # Encoder
+        self.enc1 = self._conv_block(input_channels, 64, dropout=0.1)
+        self.enc2 = self._conv_block(64, 128, dropout=0.1)
+        self.enc3 = self._conv_block(128, 256, dropout=0.2)
+        self.enc4 = self._conv_block(256, 512, dropout=0.2)
 
-    c2 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p1)
-    c2 = layers.Dropout(0.1)(c2)
-    c2 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c2)
-    p2 = layers.MaxPooling2D((2, 2))(c2)
+        # Bottleneck
+        self.bottleneck = self._conv_block(512, 1024, dropout=0.3)
 
-    c3 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(p2)
-    c3 = layers.Dropout(0.2)(c3)
-    c3 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(c3)
-    p3 = layers.MaxPooling2D((2, 2))(c3)
+        # Decoder
+        self.dec4 = self._conv_block(1024 + 512, 512, dropout=0.2)
+        self.dec3 = self._conv_block(512 + 256, 256, dropout=0.2)
+        self.dec2 = self._conv_block(256 + 128, 128, dropout=0.1)
+        self.dec1 = self._conv_block(128 + 64, 64, dropout=0.1)
 
-    c4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(p3)
-    c4 = layers.Dropout(0.2)(c4)
-    c4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(c4)
-    p4 = layers.MaxPooling2D((2, 2))(c4)
+        # Final output layer
+        self.final_conv = nn.Conv2d(64, num_classes, kernel_size=1)
 
-    # Bottleneck
-    c5 = layers.Conv2D(1024, (3, 3), activation='relu', padding='same')(p4)
-    c5 = layers.Dropout(0.3)(c5)
-    c5 = layers.Conv2D(1024, (3, 3), activation='relu', padding='same')(c5)
+    def _conv_block(self, in_channels, out_channels, dropout):
+        """Helper function to create a convolutional block with Conv2D, Dropout, and ReLU."""
+        return nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+        )
 
-    # Decoder
-    u6 = layers.UpSampling2D((2, 2))(c5)
-    u6 = layers.concatenate([u6, c4])
-    c6 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(u6)
-    c6 = layers.Dropout(0.2)(c6)
-    c6 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(c6)
+    def forward(self, x):
+        # Encoder
+        enc1 = self.enc1(x)
+        enc2 = self.enc2(F.max_pool2d(enc1, kernel_size=2))
+        enc3 = self.enc3(F.max_pool2d(enc2, kernel_size=2))
+        enc4 = self.enc4(F.max_pool2d(enc3, kernel_size=2))
 
-    u7 = layers.UpSampling2D((2, 2))(c6)
-    u7 = layers.concatenate([u7, c3])
-    c7 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(u7)
-    c7 = layers.Dropout(0.2)(c7)
-    c7 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(c7)
+        # Bottleneck
+        bottleneck = self.bottleneck(F.max_pool2d(enc4, kernel_size=2))
 
-    u8 = layers.UpSampling2D((2, 2))(c7)
-    u8 = layers.concatenate([u8, c2])
-    c8 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(u8)
-    c8 = layers.Dropout(0.1)(c8)
-    c8 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c8)
+        # Decoder
+        dec4 = self.dec4(torch.cat([F.interpolate(bottleneck, scale_factor=2, mode="bilinear", align_corners=True), enc4], dim=1))
+        dec3 = self.dec3(torch.cat([F.interpolate(dec4, scale_factor=2, mode="bilinear", align_corners=True), enc3], dim=1))
+        dec2 = self.dec2(torch.cat([F.interpolate(dec3, scale_factor=2, mode="bilinear", align_corners=True), enc2], dim=1))
+        dec1 = self.dec1(torch.cat([F.interpolate(dec2, scale_factor=2, mode="bilinear", align_corners=True), enc1], dim=1))
 
-    u9 = layers.UpSampling2D((2, 2))(c8)
-    u9 = layers.concatenate([u9, c1])
-    c9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(u9)
-    c9 = layers.Dropout(0.1)(c9)
-    c9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c9)
-
-    outputs = layers.Conv2D(num_classes, (1, 1), activation='sigmoid')(c9)
-
-    model = Model(inputs, outputs)
-    return model
+        # Final layer
+        outputs = self.final_conv(dec1)
+        return outputs

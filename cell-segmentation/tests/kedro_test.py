@@ -99,3 +99,111 @@
 #     intermediate_dir = "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate"
 
 #     compare_directories(raw_dir, intermediate_dir)
+
+# import tensorflow as tf
+# print("TensorFlow version:", tf.__version__)
+
+# # Check GPU availability
+# gpus = tf.config.list_physical_devices('GPU')
+# if gpus:
+#     print(f"GPUs Available: {len(gpus)}")
+#     for gpu in gpus:
+#         print(f"GPU: {gpu}")
+# else:
+#     print("No GPUs detected.")
+
+# # Test GPU computation
+# if gpus:
+#     with tf.device('/GPU:0'):
+#         a = tf.constant([[1.0, 2.0], [3.0, 4.0]])
+#         b = tf.constant([[1.0, 0.0], [0.0, 1.0]])
+#         c = tf.matmul(a, b)
+#         print("GPU computation result:\n", c)
+
+# import tensorflow as tf
+
+# print("TensorFlow version:", tf.__version__)
+# print("CUDA version TensorFlow was built with:", tf.sysconfig.get_build_info()['cuda_version'])
+# print("cuDNN version TensorFlow was built with:", tf.sysconfig.get_build_info()['cudnn_version'])
+
+
+# import torch
+# print(torch.__version__)  # PyTorch version
+# print(torch.cuda.is_available())  # Check if CUDA is available
+# print(torch.version.cuda)  # CUDA version bundled with PyTorch
+# print(torch.cuda.get_device_name(0))  # Your GPU name
+
+
+# Normalizatuion check 
+
+# from PIL import Image
+# import numpy as np
+
+# def check_normalization(image_path):
+#     with Image.open(image_path) as img:
+#         arr = np.array(img, dtype=np.float32)
+
+#     print(f"Image shape: {arr.shape}")
+#     print(f"Min pixel value: {arr.min()}")
+#     print(f"Max pixel value: {arr.max()}")
+#     print(f"Mean pixel value: {arr.mean()}")
+#     print(f"Standard deviation: {arr.std()}")
+
+# # Example usage
+# check_normalization("E:\diploma_proj_latest\cell-segmentation\.data/03_processed/normalized\livecell_test\A172\A172_Phase_C7_1_00d00h00m_1.tif")
+
+# Check correspondance of all train images in mask and normalized 
+
+from pathlib import Path
+
+def check_image_mask_correspondence(normalized_train_folder, masks_folder):
+    """
+    Check that all images in the normalized train folder have corresponding masks
+    and vice versa.
+    """
+    normalized_train_path = Path(normalized_train_folder)
+    masks_path = Path(masks_folder)
+    
+    mismatched_files = []
+
+    # Check each class folder
+    for class_folder in normalized_train_path.iterdir():
+        if class_folder.is_dir():
+            class_name = class_folder.name
+            class_masks_folder = masks_path / class_name
+            
+            # Check if the class folder exists in the masks folder
+            if not class_masks_folder.exists():
+                print(f"Class folder {class_name} is missing in the masks directory.")
+                mismatched_files.append((class_name, "Missing mask class folder"))
+                continue
+            
+            # List files in both folders
+            train_files = {file.stem for file in class_folder.glob("*.npy")}
+            mask_files = {file.stem for file in class_masks_folder.glob("*.npy")}
+            
+            # Find mismatches
+            missing_masks = train_files - mask_files
+            missing_images = mask_files - train_files
+            
+            # Report mismatches
+            if missing_masks:
+                print(f"Missing masks for class '{class_name}': {missing_masks}")
+                mismatched_files.extend([(class_name, f"Missing mask: {name}.npy") for name in missing_masks])
+            
+            if missing_images:
+                print(f"Missing images for class '{class_name}': {missing_images}")
+                mismatched_files.extend([(class_name, f"Missing image: {name}.npy") for name in missing_images])
+    
+    if not mismatched_files:
+        print("All image-mask correspondences are correct.")
+    else:
+        print("Some mismatches were found.")
+    
+    return mismatched_files
+
+# Example usage
+normalized_train_folder = "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_train"
+masks_folder = "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_train"
+
+mismatches = check_image_mask_correspondence(normalized_train_folder, masks_folder)

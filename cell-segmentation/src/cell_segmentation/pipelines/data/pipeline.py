@@ -1,77 +1,59 @@
 from kedro.pipeline import Pipeline, node
-from .nodes import resize_images, create_masks, normalize_images
+from .nodes import (
+    resize_images,
+    normalize_images_for_train,
+    normalize_images_for_test,
+    create_masks_for_test,
+    create_masks_for_train,
+    # create_masks,
+    # normalize_images,
+)
 
-def create_pipeline(**kwargs):
-    return Pipeline([
-        # Step 1: Resize train images
-        node(
-            func=resize_images,
-            inputs=dict(
-                input_folder="params:input_folder_train",
-                output_folder="params:output_folder_train",
-                target_size="params:target_size"
-            ),
-            outputs="resized_train_folder",
-            name="resize_train_images",
-        ),
 
-        # Step 2: Create masks for train images
-        node(
-            func=create_masks,
-            inputs=dict(
-                input_folder="resized_train_folder",  # Depends on the output of Step 1
-                output_folder="params:mask_output_folder_train"
+def create_pipeline(**kwargs) -> Pipeline:
+    return Pipeline(
+        [
+            # Step 1: Resize train images
+            node(
+                func=resize_images,
+                inputs=["params:input_folder_train", "params:output_folder_train", "params:target_size"],
+                outputs="resized_train_folder",
+                name="resize_train_images",
             ),
-            outputs="train_masks_folder",
-            name="create_train_masks",
-        ),
-
-        # Step 3: Normalize train images
-        node(
-            func=normalize_images,
-            inputs=dict(
-                input_folder="train_masks_folder",  # Depends on the output of Step 2
-                output_folder="params:norm_output_folder_train",
-                mean="params:normalization.mean",
-                std="params:normalization.std"
+            # Step 2: Resize test images
+            node(
+                func=resize_images,
+                inputs=["params:input_folder_test", "params:output_folder_test", "params:target_size"],
+                outputs="resized_test_folder",
+                name="resize_test_images",
             ),
-            outputs=None,  # Final output, no further dependency
-            name="normalize_train_images",
-        ),
-
-        # Step 4: Resize test images
-        node(
-            func=resize_images,
-            inputs=dict(
-                input_folder="params:input_folder_test",
-                output_folder="params:output_folder_test",
-                target_size="params:target_size"
+            # Step 3: Normalize train images
+            node(
+                func=normalize_images_for_train,
+                inputs=["resized_train_folder", "params:norm_output_folder_train", "params:split_parameters"],
+                outputs="normalized_train_data",
+                name="normalize_images_train",
             ),
-            outputs="resized_test_folder",
-            name="resize_test_images",
-        ),
-
-        # Step 5: Create masks for test images
-        node(
-            func=create_masks,
-            inputs=dict(
-                input_folder="resized_test_folder",  # Depends on the output of Step 4
-                output_folder="params:mask_output_folder_test"
+            # Step 4: Normalize test images
+            node(
+                func=normalize_images_for_test,
+                inputs=["resized_test_folder", "params:norm_output_folder_test"],
+                outputs="normalized_test_data",
+                name="normalize_images_test",
             ),
-            outputs="test_masks_folder",
-            name="create_test_masks",
-        ),
-
-        # Step 6: Normalize test images
-        node(
-            func=normalize_images,
-            inputs=dict(
-                input_folder="test_masks_folder",  # Depends on the output of Step 5
-                output_folder="params:norm_output_folder_test",
-                mean="params:normalization.mean",
-                std="params:normalization.std"
+            # Step 5: Create train masks
+            node(
+                func=create_masks_for_train,
+                inputs=["resized_train_folder", "params:mask_output_folder_train", "params:split_parameters"],
+                outputs="train_masks_data",
+                name="create_masks_train",
             ),
-            outputs=None,  # Final output, no further dependency
-            name="normalize_test_images",
-        ),
-    ])
+            # Step 6: Create test masks
+            node(
+                func=create_masks_for_test,
+                inputs=["resized_test_folder", "params:mask_output_folder_test"],
+                outputs="test_masks_data",
+                name="create_masks_test",
+            ),
+        ]
+    )
