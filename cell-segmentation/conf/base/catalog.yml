@@ -1,25 +1,15 @@
-livecell_test_raw:
-  type: kedro_datasets.pillow.image_dataset.ImageDataset
-  filepath: E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_test
-  # filepath: E:\diploma_proj_latest\cell-segmentation\.data\01_raw\livecell_test\
-  save_args:
-    format: TIFF
+# normalized_train_data:
+#   type: kedro_datasets.numpy.NumpyDataset
+#   filepath: E:\diploma_proj_latest\cell-segmentation\.data\03_processed\normalized\livecell_train\train
 
-livecell_train_raw:
-  type: kedro_datasets.pillow.image_dataset.ImageDataset
-  filepath: E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_train
-  # filepath: E:\diploma_proj_latest\cell-segmentation\.data\01_raw\livecell_train\
-  save_args:
-    format: TIFF
+# train_masks_data:
+#   type: kedro.extras.datasets.numpy.NumpyDataset
+#   filepath: E:\diploma_proj_latest\cell-segmentation\.data\03_processed\masks\livecell_train\train
 
-livecell_test_resized:
-  type: kedro_datasets.pillow.image_dataset.ImageDataset
-  filepath: E:\diploma_proj_latest\cell-segmentation\.data\02_intermediate\livecell_test\
-  save_args:
-    format: TIFF
+# val_normalized_data:
+#   type:   
+#   filepath: E:\diploma_proj_latest\cell-segmentation\.data\03_processed\normalized\livecell_train\val
 
-livecell_train_resized:
-  type: kedro_datasets.pillow.image_dataset.ImageDataset
-  filepath: E:\diploma_proj_latest\cell-segmentation\.data\02_intermediate\livecell_train\
-  save_args:
-    format: TIFF
+# val_masks_data:
+#   type: kedro.extras.datasets.numpy.NumpyDataset
+#   filepath: E:\diploma_proj_latest\cell-segmentation\.data\03_processed\masks\livecell_train\val

@@ -33,16 +33,11 @@ normalization:
   mean: 0.5
   std: 0.2
 
-# Training process directories
-train_images_dir:   "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_train/"
-train_masks_dir:    "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_train/"
-val_images_dir:     "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_test/"
-val_masks_dir:      "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_test/"
-
 # Training parameters
 training_parameters:
   image_size:     512
-  batch_size:     16
+  batch_size:     4
   epochs:         50
   learning_rate:  0.001
   num_classes:    8
+  model_folder:   "E:/diploma_proj_latest/cell-segmentation/.data/04_model/"

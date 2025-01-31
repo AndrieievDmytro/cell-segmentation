@@ -1,41 +1,66 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import os
-from datetime import datetime
-import json
 from .u_net import UNet
+from torch.utils.data import DataLoader
+from .tools import SegmentationDataset, save_model_with_metadata
+from pathlib import Path
 
-def train_model(train_data, val_data, training_parameters):
+def train_model(train_normalized_data, train_mask, train_params):
+
     # Initialize device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Load preprocessed data (already prepared DataLoader)
-    train_loader = train_data
-    val_loader = val_data
+    if device.type == "cuda":
+        print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        print("Using CPU")
+
+    # Initialize training parameters
+    image_size          = train_params["image_size"]
+    batch_size          = train_params["batch_size"]
+    epochs              = train_params["epochs"]
+    learning_rate       = train_params["learning_rate"]
+    num_classes         = train_params["num_classes"]
+    train_images_dir    = Path(train_normalized_data) / "train"
+    train_masks_dir     = Path(train_mask) / "train"
+    val_images_dir      = Path(train_normalized_data) / "val"
+    val_masks_dir       = Path(train_mask) / "val"
+    model_folder        = train_params["model_folder"]
+    
+    print(f"Training parameters: Image size: {image_size}, Batch size: {batch_size}, "
+            f"Epochs: {epochs}, Learning rate: {learning_rate}, Number of classes: {num_classes}, "
+                f"Training image path: {train_images_dir}, Training mask path: {train_masks_dir}, "
+                    f"Validation image path: {val_images_dir}, Validation mask path: {val_masks_dir}, "
+                        f"Output model folder: {model_folder}.")
 
     # Initialize the model
-    model = UNet(
-        input_shape=(1, training_parameters["image_size"], training_parameters["image_size"]),
-        num_classes=training_parameters["num_classes"]
-    )
+    model = UNet(num_classes=num_classes)
     model = model.to(device)
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()  # Multi-class segmentation
-    optimizer = optim.Adam(model.parameters(), lr=training_parameters["learning_rate"])
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # Create Dataset Instances
+    train_dataset = SegmentationDataset(train_images_dir, train_masks_dir)
+    val_dataset = SegmentationDataset(val_images_dir, val_masks_dir)
+
+    # Create DataLoaders
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     # Training loop
-    for epoch in range(training_parameters["epochs"]):
+    for epoch in range(epochs):
         model.train()
         train_loss = 0
 
-        for images, masks, _ in train_loader:  # Assuming your DataLoader returns images, masks, and labels
+        for images, masks in train_loader:  # FIX: Removed `_,`
             images, masks = images.to(device), masks.to(device)
 
             # Forward pass
             outputs = model(images)
-            loss = criterion(outputs, masks.long())  # Convert masks to long for CrossEntropyLoss
+            loss = criterion(outputs, masks)  # FIX: `masks.long()` not needed (already `long` in dataset)
 
             # Backward pass
             optimizer.zero_grad()
@@ -48,38 +73,16 @@ def train_model(train_data, val_data, training_parameters):
         model.eval()
         val_loss = 0
         with torch.no_grad():
-            for images, masks, _ in val_loader:
+            for images, masks in val_loader:
                 images, masks = images.to(device), masks.to(device)
                 outputs = model(images)
-                loss = criterion(outputs, masks.long())
+                loss = criterion(outputs, masks)
                 val_loss += loss.item()
 
-        print(f"Epoch [{epoch + 1}/{training_parameters['epochs']}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+        print(f"Epoch [{epoch + 1}/{epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
     # Save the trained model and training parameters
-    save_dir = training_parameters.get("save_dir", "E:\\diploma_proj_latest\\cell-segmentation\\.data\\04_model")
-    model_path, parameters_path = save_model_with_metadata(model, training_parameters, save_dir)
+    save_dir = model_folder
+    model_path, _ = save_model_with_metadata(model, train_params, save_dir)
 
-    # Return the path to the saved model
     return model_path
-
-
-def save_model_with_metadata(model, parameters, save_dir):
-    # Ensure the save directory exists
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Get the current timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Save the model with the timestamp in the filename
-    model_path = os.path.join(save_dir, f"unet_model_{timestamp}.pth")
-    torch.save(model.state_dict(), model_path)
-
-    # Save the training parameters for future reference
-    parameters_path = os.path.join(save_dir, f"training_parameters_{timestamp}.json")
-    with open(parameters_path, "w") as f:
-        json.dump(parameters, f, indent=4)
-
-    print(f"Model saved at: {model_path}")
-    print(f"Training parameters saved at: {parameters_path}")
-    return model_path, parameters_path
