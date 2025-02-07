@@ -17,7 +17,13 @@ mask_output_folder_test:  "E:/diploma_proj_latest/cell-segmentation/.data/03_pro
 norm_output_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_train"
 norm_output_folder_test: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_test"
 
-mask_threshold: 128
+# Set thresholding parameters 
+thresholding_parameters:
+  use_adaptive      : False    # Change to True if illumination is uneven
+  use_otsu          : True         # Use Otsu's method to auto-select threshold
+  invert_threshold  : True # Invert thresholding since cells are dark
+  threshold_val     : 40      # Only used if not using Otsu
+  min_obj_size      : 5       # Lowered to preserve smaller cells
 
 # Split parameters for train and val
 split_parameters:
@@ -36,8 +42,8 @@ normalization:
 # Training parameters
 training_parameters:
   image_size:     512
-  batch_size:     4
+  batch_size:     6
   epochs:         50
-  learning_rate:  0.001
-  num_classes:    8
+  learning_rate:  0.0005
+  num_classes:    9
   model_folder:   "E:/diploma_proj_latest/cell-segmentation/.data/04_model/"

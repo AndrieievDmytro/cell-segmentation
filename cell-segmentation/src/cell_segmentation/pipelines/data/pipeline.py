@@ -42,14 +42,14 @@ def create_pipeline(**kwargs) -> Pipeline:
             #  Create train masks
             node(
                 func=create_masks_for_train,
-                inputs=["resized_train_folder", "params:mask_output_folder_train", "params:split_parameters", "params:mask_threshold"],
+                inputs=["resized_train_folder", "params:mask_output_folder_train", "params:split_parameters", "params:thresholding_parameters"],
                 outputs="train_masks_data",
                 name="create_masks_train",
             ),
             #  Create test masks
             node(
                 func=create_masks_for_test,
-                inputs=["resized_test_folder", "params:mask_output_folder_test","params:mask_threshold"],
+                inputs=["resized_test_folder", "params:mask_output_folder_test","params:thresholding_parameters"],
                 outputs="test_masks_data",
                 name="create_masks_test",
             ),
