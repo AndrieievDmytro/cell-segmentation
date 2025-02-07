@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from .tools import SegmentationDataset, save_model_with_metadata
 from pathlib import Path
 from torch.amp import autocast, GradScaler
+from .deeplab_v3plus import DeepLabV3Plus
 
 def train_model(train_normalized_data, train_mask, train_params):
 
@@ -20,16 +21,17 @@ def train_model(train_normalized_data, train_mask, train_params):
         print("Using CPU")
 
     # Initialize training parameters
-    image_size          = train_params["image_size"]
-    batch_size          = train_params["batch_size"]
-    epochs              = train_params["epochs"]
-    learning_rate       = train_params["learning_rate"]
-    num_classes         = train_params["num_classes"]
-    train_images_dir    = Path(train_normalized_data) / "train"
-    train_masks_dir     = Path(train_mask) / "train"
-    val_images_dir      = Path(train_normalized_data) / "val"
-    val_masks_dir       = Path(train_mask) / "val"
-    model_folder        = train_params["model_folder"]
+    image_size                = train_params["image_size"]
+    batch_size                = train_params["batch_size"]
+    epochs                    = train_params["epochs"]
+    learning_rate             = train_params["learning_rate"]
+    num_classes               = train_params["num_classes"]
+    train_images_dir          = Path(train_normalized_data) / "train"
+    train_masks_dir           = Path(train_mask) / "train"
+    val_images_dir            = Path(train_normalized_data) / "val"
+    val_masks_dir             = Path(train_mask) / "val"
+    model_folder_unet_deeplab = train_params["model_folder_unet_deeplab_unet_deeplab"]
+    backbone                  = train_params["backbone"]
     
     print(f"Training parameters:\n"
             f"  Image size: {image_size}\n"
@@ -41,11 +43,12 @@ def train_model(train_normalized_data, train_mask, train_params):
             f"  Training mask path: {train_masks_dir}\n"
             f"  Validation image path: {val_images_dir}\n"
             f"  Validation mask path: {val_masks_dir}\n"
-            f"  Output model folder: {model_folder}")
+            f"  Output model folder: {model_folder_unet_deeplab}")
 
 
     # Initialize the model
-    model = UNet(num_classes=num_classes)
+    # model = UNet(num_classes=num_classes)
+    model = DeepLabV3Plus(num_classes=num_classes, backbone=backbone)
     model = model.to(device)
 
     # Define the loss function and optimizer
@@ -54,7 +57,7 @@ def train_model(train_normalized_data, train_mask, train_params):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     # Load checkpoint if available
-    latest_checkpoint_path = Path(model_folder) / "latest_checkpoint.pth"
+    latest_checkpoint_path = Path(model_folder_unet_deeplab) / "latest_checkpoint.pth"
     if latest_checkpoint_path.exists():
         checkpoint = torch.load(latest_checkpoint_path)
         model.load_state_dict(checkpoint["model_state_dict"])
@@ -138,8 +141,7 @@ def train_model(train_normalized_data, train_mask, train_params):
         # Save the trained model and training parameters
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            save_dir = model_folder
-            # model_path, _ = save_model_with_metadata(model, train_params, save_dir)
+            save_dir = model_folder_unet_deeplab
             model_path, _ = save_model_with_metadata(model, optimizer, scheduler, train_params, epoch + 1, save_dir)
             print(f"New best model saved with Val Loss: {best_val_loss:.4f}")
         
@@ -150,7 +152,7 @@ def train_model(train_normalized_data, train_mask, train_params):
             "scheduler_state_dict": scheduler.state_dict(),
             "best_val_loss": best_val_loss
         }
-        torch.save(checkpoint, f"{model_folder}/latest_checkpoint.pth")  # Save full checkpoint
+        torch.save(checkpoint, f"{model_folder_unet_deeplab}/latest_checkpoint.pth")  # Save full checkpoint
 
     
     return model_path
