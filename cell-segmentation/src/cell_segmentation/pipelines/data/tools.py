@@ -1,4 +1,3 @@
-import os
 import cv2
 import tifffile as tiff
 import numpy as np
@@ -9,17 +8,7 @@ from skimage.morphology import remove_small_objects
 
 
 def split_data(files: List[Path], train_ratio: float, random_seed: int) -> Tuple[List[Path], List[Path]]:
-    """
-    Splits a list of files into train and validation sets.
 
-    Args:
-        files (List[Path]): List of file paths to split.
-        train_ratio (float): Proportion of data to include in the training set.
-        random_seed (int): Seed for random shuffling.
-
-    Returns:
-        Tuple[List[Path], List[Path]]: Train and validation file lists.
-    """
     random.seed(random_seed)
     random.shuffle(files)
     split_idx = int(len(files) * train_ratio)
@@ -28,7 +17,7 @@ def split_data(files: List[Path], train_ratio: float, random_seed: int) -> Tuple
     return train_files, val_files
 
 def enhance_contrast(image):
-    """Enhance image contrast using CLAHE (handles grayscale images)."""
+
     if len(image.shape) > 2:  
         raise ValueError("CLAHE expects a single-channel grayscale image, but got a multi-channel image.")
     
@@ -39,17 +28,6 @@ def enhance_contrast(image):
 
 def threshold_and_morphology(enhanced_image, threshold_val=40, use_adaptive=False, use_otsu=False,
                             invert_threshold=True, min_obj_size=50):
-    """
-    Apply thresholding to create a binary mask and perform minimal cleanup.
-    
-    Parameters:
-    - use_adaptive: Use adaptive thresholding if True.
-    - use_otsu: Use Otsu's method for automatic threshold selection.
-    - invert_threshold: Invert the binary mask (useful for dark cells on a bright background).
-    - min_obj_size: Minimum size for objects to keep (in pixels).
-    
-    This function will display a single debug plot of the binary mask immediately after thresholding.
-    """
     # Choose the thresholding method:
     if use_adaptive:
         if invert_threshold:
@@ -115,11 +93,9 @@ def process_class_folder(class_folder, output_path, thresholding_parameters, mod
         mask = tiff.imread(mask_path)
         enhanced_image = enhance_contrast(mask)
         
-    
         # Apply thresholding and minimal cleanup:
         binary_mask = threshold_and_morphology(enhanced_image, threshold_val, use_adaptive,
                                         use_otsu, invert_threshold, min_obj_size)
-
         # Save the processed mask
         output_mask_path = output_folder / mask_path.name
         binary_mask = binary_mask.astype(np.uint16) * class_id  

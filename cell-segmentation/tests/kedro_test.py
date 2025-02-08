@@ -505,14 +505,102 @@
 #     print("Cannot proceed without 'imagecodecs'.")
 
 
+# import numpy as np
+# import tifffile as tiff
+
+# image_path = r"E:\diploma_proj_latest\cell-segmentation\.data\03_processed\masks\livecell_test\test\A172\A172_Phase_C7_1_00d00h00m_1.tif"
+# normalizedd=  r"E:\diploma_proj_latest\cell-segmentation\.data\03_processed\normalized\livecell_train\train\A172\A172_Phase_A7_1_00d00h00m_1.npy"
+# # Load an example
+# image = np.load(normalizedd)
+# mask = tiff.imread(image_path)
+
+# print("Image shape:", image.shape)  # Should be (H, W) or (1, H, W)
+# print("Mask unique values:", np.unique(mask))  # Should print [0 1 2 3 4 5 6 7]
+
+import torch
 import numpy as np
+import os
+from torch.utils.data import Dataset
+from pathlib import Path
 import tifffile as tiff
+import matplotlib.pyplot as plt
+from pathlib import Path
 
-image_path = r"E:\diploma_proj_latest\cell-segmentation\.data\03_processed\masks\livecell_test\test\A172\A172_Phase_C7_1_00d00h00m_1.tif"
-normalizedd=  r"E:\diploma_proj_latest\cell-segmentation\.data\03_processed\normalized\livecell_train\train\A172\A172_Phase_A7_1_00d00h00m_1.npy"
-# Load an example
-image = np.load(normalizedd)
-mask = tiff.imread(image_path)
+class SegmentationDataset(Dataset):
+    def __init__(self, image_dir, mask_dir):
+        self.image_dir = Path(image_dir)
+        self.mask_dir = Path(mask_dir)
 
-print("Image shape:", image.shape)  # Should be (H, W) or (1, H, W)
-print("Mask unique values:", np.unique(mask))  # Should print [0 1 2 3 4 5 6 7]
+        # Recursively find all image and mask files
+        self.image_paths = []
+        self.mask_paths = []
+
+        for image_path in self.image_dir.rglob("*.npy"):  # Recursively find .npy files
+            mask_path = str(image_path).replace(str(self.image_dir), str(self.mask_dir)).replace(".npy", ".tif")  # Match .tif extension
+            exist = os.path.exists(mask_path) 
+            if exist :  # Check if corresponding mask exists
+                self.image_paths.append(image_path)
+                self.mask_paths.append(Path(mask_path))  # Store as Path object
+
+        print(f"Found {len(self.image_paths)} image-mask pairs.")
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, index):
+        image_path = self.image_paths[index]
+        mask_path = self.mask_paths[index]
+
+        # Load preprocessed numpy image
+        image = np.load(image_path)
+        mask = tiff.imread(mask_path)
+
+        # Ensure correct shape for image
+        image = torch.tensor(image, dtype=torch.float32)
+        if image.ndim == 2:  
+            image = image.unsqueeze(0)  # Ensure shape is (C, H, W)
+
+        # Mask remains unchanged (1-8 class values are correct)
+        mask = torch.tensor(mask, dtype=torch.long)
+
+        return image, mask
+
+# Run in main
+if __name__ == "__main__":
+    # Define dataset paths
+    test_mask =             "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_test/test/"
+    test_normalized_data = "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_test/"
+    
+    test_images_dir          = Path(test_normalized_data) 
+    test_masks_dir           = Path(test_mask) 
+
+    # Initialize dataset
+    test_dataset = SegmentationDataset(test_images_dir, test_masks_dir)
+
+    # Debugging: Check dataset length
+    print(f"Total test dataset size: {len(test_dataset)}")
+
+    # Debugging: Retrieve a sample
+    sample_index = 0  # Change this index to test different samples
+    image, mask = test_dataset[sample_index]
+
+    # Print shapes to verify correctness
+    print(f"Image shape: {image.shape}, Mask shape: {mask.shape}")
+
+    # Convert tensor to numpy for visualization
+    image_np = image.numpy().squeeze()  # Remove channel dimension for grayscale visualization
+    mask_np = mask.numpy()
+
+    # Plot image and mask
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    ax[0].imshow(image_np, cmap="gray")
+    ax[0].set_title("Image")
+    ax[0].axis("off")
+
+    ax[1].imshow(mask_np, cmap="jet")  # Different colormap for mask
+    ax[1].set_title("Mask")
+    ax[1].axis("off")
+
+    plt.show()
+
+    print("Done")

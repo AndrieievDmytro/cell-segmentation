@@ -2,8 +2,6 @@ import torch
 import numpy as np
 import os
 from torch.utils.data import Dataset
-from datetime import datetime
-import json
 from pathlib import Path
 import tifffile as tiff 
 
@@ -19,7 +17,8 @@ class SegmentationDataset(Dataset):
 
         for image_path in self.image_dir.rglob("*.npy"):  # Recursively find .npy files
             mask_path = str(image_path).replace(str(self.image_dir), str(self.mask_dir)).replace(".npy", ".tif")  # Match .tif extension
-            if os.path.exists(mask_path):  # Check if corresponding mask exists
+            exist = os.path.exists(mask_path) 
+            if exist :  # Check if corresponding mask exists
                 self.image_paths.append(image_path)
                 self.mask_paths.append(Path(mask_path))  # Store as Path object
 
@@ -45,30 +44,3 @@ class SegmentationDataset(Dataset):
         mask = torch.tensor(mask, dtype=torch.long)
 
         return image, mask
-
-# Save Model & Training Metadata
-def save_model_with_metadata(model, optimizer, scheduler, parameters, epoch, save_dir):
-    os.makedirs(save_dir, exist_ok=True)
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    model_path = os.path.join(save_dir, f"unet_model_{timestamp}.pth")
-
-    # Save full checkpoint (model + optimizer + scheduler + epoch)
-    checkpoint = {
-        "epoch": epoch,
-        "model_state_dict": model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(),
-        "scheduler_state_dict": scheduler.state_dict(),  #  Save scheduler state
-        "parameters": parameters
-    }
-    torch.save(checkpoint, model_path)
-
-    # Save training parameters separately
-    parameters_path = os.path.join(save_dir, f"training_parameters_{timestamp}.json")
-    with open(parameters_path, "w") as f:
-        json.dump(parameters, f, indent=4)
-
-    print(f"Model saved at: {model_path}")
-    print(f"Training parameters saved at: {parameters_path}")
-
-    return model_path, parameters_path

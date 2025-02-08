@@ -1,21 +1,21 @@
 # Target size for resizing images
 target_size:
-  width: 512
+  width : 512
   height: 512
 
 # Input and output folders for test and train
-input_folder_test: "E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_test"
+input_folder_test : "E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_test"
 output_folder_test: "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate/livecell_test"
 
-input_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_train"
-output_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate/livecell_train"
+input_folder_train  : "E:/diploma_proj_latest/cell-segmentation/.data/01_raw/livecell_train"
+output_folder_train : "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate/livecell_train"
 
 # Masks and normalized data output folders
-mask_output_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_train"
-mask_output_folder_test:  "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_test"
+mask_output_folder_train  : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_train"
+mask_output_folder_test   : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_test"
 
-norm_output_folder_train: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_train"
-norm_output_folder_test: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_test"
+norm_output_folder_train  : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_train"
+norm_output_folder_test   : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_test"
 
 # Set thresholding parameters 
 thresholding_parameters:
@@ -27,17 +27,17 @@ thresholding_parameters:
 
 # Split parameters for train and val
 split_parameters:
-  input_folder_intermediate: "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate"
-  output_folder_processed: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed"
-  train_ratio: 0.8  # 80% train, 20% validation
-  random_seed: 42
-  val_norm_output_folder: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_val"
-  val_mask_output_folder: "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_val"
+  input_folder_intermediate : "E:/diploma_proj_latest/cell-segmentation/.data/02_intermediate"
+  output_folder_processed   : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed"
+  train_ratio               : 0.8  # 80% train, 20% validation
+  random_seed               : 42
+  val_norm_output_folder    : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_val"
+  val_mask_output_folder    : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_val"
 
 # Parameters for normalization
 normalization:
-  mean: 0.5
-  std: 0.2
+  mean  : 0.5
+  std   : 0.2
 
 # Training parameters
 training_parameters:
@@ -52,5 +52,14 @@ training_parameters:
 
 # Evaluation parameters 
 evaluation_parameters:
-    model_folder_unet         : "E:/diploma_proj_latest/cell-segmentation/.data/05_evaluation/u_net/"
-    model_folder_deeplab      : "E:/diploma_proj_latest/cell-segmentation/.data/05_evaluation/deep_lab_v3/"
+    model_file_unet           : "E:/diploma_proj_latest/cell-segmentation/.data/04_model/u_net/unet_model_val_loss_0_0277.pth"
+    model_file_deeplab        : "E:/diploma_proj_latest/cell-segmentation/.data/04_model/deeeplab_v3/deeplab_v3_00018.pth"
+    unet_images_save_dir      : "E:/diploma_proj_latest/cell-segmentation/.data/05_evaluation/u_net/images"
+    deeplab_images_save_dir   : "E:/diploma_proj_latest/cell-segmentation/.data/05_evaluation/deep_lab_v3/images"
+    deeplab_metrics_file_path : "E:/diploma_proj_latest/cell-segmentation/.data/05_evaluation/deep_lab_v3/metrics/deeplab_metrics.json"
+    unet_metrics_file_path    : "E:/diploma_proj_latest/cell-segmentation/.data/05_evaluation/u_net/metrics/u_net.json"
+    mask_output_folder_test   : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/masks/livecell_test/test/"
+    norm_output_folder_test   : "E:/diploma_proj_latest/cell-segmentation/.data/03_processed/normalized/livecell_test/"
+    batch_size                : 8
+    model_name                : "deeplab"
+

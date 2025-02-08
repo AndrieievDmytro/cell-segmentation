@@ -11,11 +11,5 @@ def create_pipeline(**kwargs) -> Pipeline:
         inputs=["normalized_train_data", "train_masks_data", "params:training_parameters"],
         outputs="trained_model",
         name="train_model",
-    )        # Evaluate the model
-        # node(
-        #     func=evaluate_model,
-        #     inputs=["trained_model", "test_masks_data"],
-        #     outputs="evaluation_metrics",
-        #     name="evaluate_model",
-        # ),
+    )      
     ])
