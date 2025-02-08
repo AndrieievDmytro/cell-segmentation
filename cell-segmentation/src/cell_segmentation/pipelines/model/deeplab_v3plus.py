@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+from torchvision.models import ResNet50_Weights, ResNet101_Weights
 
 
 class ASPP(nn.Module):
-    """ Atrous Spatial Pyramid Pooling (ASPP) module for multi-scale feature extraction """
 
     def __init__(self, in_channels, out_channels=256, rates=[6, 12, 18]):
         super(ASPP, self).__init__()
@@ -44,22 +44,34 @@ class ASPP(nn.Module):
 
 
 class DeepLabV3Plus(nn.Module):
-    """ DeepLabV3+ model with ResNet50 as a backbone """
 
-    def __init__(self, num_classes=9, backbone="resnet50", pretrained=True):
+    def __init__(self, num_classes=9, backbone="resnet50", pretrained=True, in_channels=1):
         super(DeepLabV3Plus, self).__init__()
+
+        # Select the backbone and weights
         if backbone == "resnet50":
-            self.backbone = models.resnet50(pretrained=pretrained)
+            weights = ResNet50_Weights.DEFAULT if pretrained else None
+            self.backbone = models.resnet50(weights=weights)
             low_level_channels = 256
             aspp_channels = 2048
         elif backbone == "resnet101":
-            self.backbone = models.resnet101(pretrained=pretrained)
+            weights = ResNet101_Weights.DEFAULT if pretrained else None
+            self.backbone = models.resnet101(weights=weights)
             low_level_channels = 256
             aspp_channels = 2048
         else:
             raise ValueError("Backbone must be 'resnet50' or 'resnet101'.")
 
-        # Remove fully connected layers
+        if in_channels == 1:  # If input images are grayscale
+            self.backbone.conv1 = nn.Conv2d(
+                in_channels=1,  # Change input channels to 1
+                out_channels=64,
+                kernel_size=7,
+                stride=2,
+                padding=3,
+                bias=False,
+            )
+
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
 
         # ASPP Module

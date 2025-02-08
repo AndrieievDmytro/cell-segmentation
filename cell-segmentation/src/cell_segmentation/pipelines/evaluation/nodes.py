@@ -1,47 +1,72 @@
-from .metrics import (
-    dice_loss,
-    iou_score,
-    f1_score,
-    mean_pixel_accuracy,
-)
+from .metrics import dice_coefficient, iou, pixel_accuracy, precision_recall
 import torch
 import os
 import json
-from datetime import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+from tqdm import tqdm  # Progress bar
+# from torchvision.utils import save_image
 
 
-def evaluate_model(model, test_data, evaluation_parameters):
-    """Evaluate the model on the test dataset."""
-    # Prepare device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
-    model.eval()
+def evaluate_model(model, dataloader, device, save_dir="segmentation_results", metrics_file="metrics.json"):
+    model.eval()  # Set model to evaluation mode
+    os.makedirs(save_dir, exist_ok=True)  # Create directory if not exists
 
-    # Unpack test data
-    x_test, y_test = test_data  # Assuming test_data is a tuple (images, masks)
-    x_test, y_test = x_test.to(device), y_test.to(device)
+    dice_scores, iou_scores, pixel_accuracies, precisions, recalls = [], [], [], [], []
 
-    # Evaluate the model
     with torch.no_grad():
-        y_pred = model(x_test)
-        y_pred = torch.sigmoid(y_pred)  # For binary segmentation
-        y_pred_binary = (y_pred > 0.5).float()
+        for idx, (images, masks) in enumerate(tqdm(dataloader, desc="Validating")):
+            images, masks = images.to(device), masks.to(device)
+            outputs = model(images)
+            preds = torch.argmax(outputs, dim=1)  # Convert logits to class labels
 
-        # Calculate metrics
-        results = {
-            "Dice Coefficient": dice_loss(y_test, y_pred_binary).item(),
-            "IoU": iou_score(y_test, y_pred_binary).item(),
-            "F1-Score": f1_score(y_test, y_pred_binary).item(),
-            "Mean Pixel Accuracy": mean_pixel_accuracy(y_test, y_pred_binary).item(),
-        }
+            # Compute metrics
+            dice_scores.append(dice_coefficient(outputs, masks))
+            iou_scores.append(iou(outputs, masks))
+            pixel_accuracies.append(pixel_accuracy(outputs, masks))
+            prec, rec = precision_recall(outputs, masks)
+            precisions.append(prec)
+            recalls.append(rec)
 
-    # Save evaluation metrics
-    save_dir = evaluation_parameters.get("save_dir", "evaluation_results")
-    os.makedirs(save_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_path = os.path.join(save_dir, f"evaluation_metrics_{timestamp}.json")
-    with open(results_path, "w") as f:
-        json.dump(results, f, indent=4)
+            # Convert tensors to NumPy for visualization
+            img_np = images.cpu().squeeze().numpy()
+            mask_np = masks.cpu().squeeze().numpy()
+            pred_np = preds.cpu().squeeze().numpy()
 
-    print(f"Evaluation metrics saved at: {results_path}")
-    return results
+            # Save individual images
+            save_path_img = os.path.join(save_dir, f"image_{idx}.png")
+            save_path_mask = os.path.join(save_dir, f"mask_{idx}.png")
+            save_path_pred = os.path.join(save_dir, f"pred_{idx}.png")
+            save_path_overlay = os.path.join(save_dir, f"overlay_{idx}.png")
+
+            plt.imsave(save_path_img, img_np, cmap="gray")
+            plt.imsave(save_path_mask, mask_np, cmap="gray")
+            plt.imsave(save_path_pred, pred_np, cmap="gray")
+
+            # Overlay prediction on input image
+            fig, ax = plt.subplots(1, 3, figsize=(12, 4))
+            ax[0].imshow(img_np, cmap="gray")
+            ax[0].set_title("Input Image")
+            ax[1].imshow(mask_np, cmap="gray")
+            ax[1].set_title("Ground Truth Mask")
+            ax[2].imshow(img_np, cmap="gray")
+            ax[2].imshow(pred_np, cmap="jet", alpha=0.5)  # Overlay with transparency
+            ax[2].set_title("Overlay Prediction")
+            plt.savefig(save_path_overlay)
+            plt.close()
+
+    # Compute average metrics
+    metrics = {
+        "Dice Coefficient": sum(dice_scores) / len(dice_scores),
+        "IoU": sum(iou_scores) / len(iou_scores),
+        "Pixel Accuracy": sum(pixel_accuracies) / len(pixel_accuracies),
+        "Precision": sum(precisions) / len(precisions),
+        "Recall": sum(recalls) / len(recalls),
+    }
+
+    # Save metrics to a JSON file
+    metrics_path = os.path.join(save_dir, metrics_file)
+    with open(metrics_path, "w") as f:
+        json.dump(metrics, f, indent=4)
+
+    print(f"\nMetrics saved at: {metrics_path}")

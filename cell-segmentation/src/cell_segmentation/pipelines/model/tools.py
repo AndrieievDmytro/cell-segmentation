@@ -47,28 +47,28 @@ class SegmentationDataset(Dataset):
         return image, mask
 
 
-def compute_metrics(pred, target, num_classes=8):
-    smooth = 1e-6
+# def compute_metrics(pred, target, num_classes=9):
+#     smooth = 1e-6
 
-    # Convert predictions to class indices (argmax)
-    pred = torch.argmax(pred, dim=1)
+#     # Convert predictions to class indices (argmax)
+#     pred = torch.argmax(pred, dim=1)
 
-    iou_per_class = []
-    dice_per_class = []
+#     iou_per_class = []
+#     dice_per_class = []
 
-    for class_idx in range(1, num_classes): 
-        pred_class = (pred == class_idx).float()
-        target_class = (target == class_idx).float()
+#     for class_idx in range(1, num_classes): 
+#         pred_class = (pred == class_idx).float()
+#         target_class = (target == class_idx).float()
 
-        intersection = (pred_class * target_class).sum()
-        union = pred_class.sum() + target_class.sum() - intersection
-        iou = (intersection + smooth) / (union + smooth)
-        dice = (2 * intersection + smooth) / (pred_class.sum() + target_class.sum() + smooth)
+#         intersection = (pred_class * target_class).sum()
+#         union = pred_class.sum() + target_class.sum() - intersection
+#         iou = (intersection + smooth) / (union + smooth)
+#         dice = (2 * intersection + smooth) / (pred_class.sum() + target_class.sum() + smooth)
 
-        iou_per_class.append(iou.item())
-        dice_per_class.append(dice.item())
+#         iou_per_class.append(iou.item())
+#         dice_per_class.append(dice.item())
 
-    return iou_per_class, dice_per_class
+#     return iou_per_class, dice_per_class
 
 
 # Save Model & Training Metadata

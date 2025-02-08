@@ -19,11 +19,11 @@ norm_output_folder_test: "E:/diploma_proj_latest/cell-segmentation/.data/03_proc
 
 # Set thresholding parameters 
 thresholding_parameters:
-  use_adaptive      : False    # Change to True if illumination is uneven
-  use_otsu          : True         # Use Otsu's method to auto-select threshold
-  invert_threshold  : True # Invert thresholding since cells are dark
-  threshold_val     : 40      # Only used if not using Otsu
-  min_obj_size      : 5       # Lowered to preserve smaller cells
+  use_adaptive      : False    
+  use_otsu          : True   
+  invert_threshold  : True 
+  threshold_val     : 40     
+  min_obj_size      : 5   
 
 # Split parameters for train and val
 split_parameters:
@@ -42,10 +42,15 @@ normalization:
 # Training parameters
 training_parameters:
   image_size                : 512
-  batch_size                : 6
+  batch_size                : 8
   epochs                    : 50
   learning_rate             : 0.0005
   num_classes               : 9
   model_folder_unet         : "E:/diploma_proj_latest/cell-segmentation/.data/04_model/u_net/"
-  model_folder_unet_deeplab : "E:/diploma_proj_latest/cell-segmentation/.data/04_model/deeeplab_v3/"
+  model_folder_deeplab      : "E:/diploma_proj_latest/cell-segmentation/.data/04_model/deeeplab_v3/"
   backbone                  : "resnet50"
+
+# Evaluation parameters 
+evaluation_parameters:
+    model_folder_unet         : "E:/diploma_proj_latest/cell-segmentation/.data/05_evaluation/u_net/"
+    model_folder_deeplab      : "E:/diploma_proj_latest/cell-segmentation/.data/05_evaluation/deep_lab_v3/"

@@ -1,54 +1,33 @@
 import torch
 import torch.nn.functional as F
 
-def dice_loss(y_true, y_pred):
-    """Calculate the Dice loss."""
-    numerator = 2 * torch.sum(y_true * y_pred)
-    denominator = torch.sum(y_true + y_pred)
-    return 1 - numerator / (denominator + 1e-7)
+def dice_coefficient(preds, targets, smooth=1e-6):
+    preds = torch.argmax(F.softmax(preds, dim=1), dim=1)  # Convert logits to class labels
+    targets = targets.long()  # Ensure target is long type
+    intersection = (preds * targets).sum(dim=(1, 2))  # Sum over H and W
+    union = preds.sum(dim=(1, 2)) + targets.sum(dim=(1, 2))  # Sum for both masks
+    dice = (2. * intersection + smooth) / (union + smooth)
+    return dice.mean().item()
 
-def iou_score(y_true, y_pred):
-    """Calculate Intersection over Union (IoU) score."""
-    intersection = torch.sum(y_true * y_pred)
-    union = torch.sum(y_true + y_pred) - intersection
-    return intersection / (union + 1e-7)
+def iou(preds, targets, smooth=1e-6):
+    preds = torch.argmax(F.softmax(preds, dim=1), dim=1)
+    targets = targets.long()
+    intersection = (preds & targets).sum(dim=(1, 2))
+    union = (preds | targets).sum(dim=(1, 2))
+    iou = (intersection + smooth) / (union + smooth)
+    return iou.mean().item()
 
-def f1_score(y_true, y_pred):
-    """Calculate F1-score."""
-    precision = torch.sum(y_true * y_pred) / (torch.sum(y_pred) + 1e-7)
-    recall = torch.sum(y_true * y_pred) / (torch.sum(y_true) + 1e-7)
-    return 2 * (precision * recall) / (precision + recall + 1e-7)
+def pixel_accuracy(preds, targets):
+    preds = torch.argmax(F.softmax(preds, dim=1), dim=1)
+    correct = (preds == targets).float().sum()
+    total = targets.numel()
+    return correct / total
 
-def boundary_iou(y_true, y_pred):
-    """Calculate Boundary IoU."""
-    # Placeholder for Boundary IoU implementation
-    pass
-
-def hausdorff_distance(y_true, y_pred):
-    """Calculate Hausdorff Distance."""
-    # Placeholder for Hausdorff Distance calculation
-    pass
-
-def mean_pixel_accuracy(y_true, y_pred):
-    """Calculate Mean Pixel Accuracy."""
-    correct_pixels = torch.sum((y_true == y_pred).float())
-    total_pixels = y_true.numel()
-    return correct_pixels / total_pixels
-
-def evaluate_model(model, x_test, y_test):
-    """Evaluate the model using various metrics."""
-    model.eval()
-    with torch.no_grad():
-        y_pred = model(x_test)
-        y_pred = torch.sigmoid(y_pred)  # Assuming binary segmentation
-        y_pred_binary = (y_pred > 0.5).float()
-
-        results = {
-            "Dice Coefficient": dice_loss(y_test, y_pred_binary).item(),
-            "IoU": iou_score(y_test, y_pred_binary).item(),
-            "F1-Score": f1_score(y_test, y_pred_binary).item(),
-            "Boundary IoU": boundary_iou(y_test, y_pred_binary),
-            "Hausdorff Distance": hausdorff_distance(y_test, y_pred_binary),
-            "Mean Pixel Accuracy": mean_pixel_accuracy(y_test, y_pred_binary).item(),
-        }
-    return results
+def precision_recall(preds, targets, smooth=1e-6):
+    preds = torch.argmax(F.softmax(preds, dim=1), dim=1)
+    TP = (preds * targets).sum(dim=(1, 2))  # True Positives
+    FP = (preds * (1 - targets)).sum(dim=(1, 2))  # False Positives
+    FN = ((1 - preds) * targets).sum(dim=(1, 2))  # False Negatives
+    precision = (TP + smooth) / (TP + FP + smooth)
+    recall = (TP + smooth) / (TP + FN + smooth)
+    return precision.mean().item(), recall.mean().item()

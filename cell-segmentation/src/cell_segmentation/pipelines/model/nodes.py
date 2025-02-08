@@ -30,7 +30,7 @@ def train_model(train_normalized_data, train_mask, train_params):
     train_masks_dir           = Path(train_mask) / "train"
     val_images_dir            = Path(train_normalized_data) / "val"
     val_masks_dir             = Path(train_mask) / "val"
-    model_folder_unet_deeplab = train_params["model_folder_unet_deeplab_unet_deeplab"]
+    model_folder_deeplab      = train_params["model_folder_deeplab"]
     backbone                  = train_params["backbone"]
     
     print(f"Training parameters:\n"
@@ -43,7 +43,7 @@ def train_model(train_normalized_data, train_mask, train_params):
             f"  Training mask path: {train_masks_dir}\n"
             f"  Validation image path: {val_images_dir}\n"
             f"  Validation mask path: {val_masks_dir}\n"
-            f"  Output model folder: {model_folder_unet_deeplab}")
+            f"  Output model folder: {model_folder_deeplab}")
 
 
     # Initialize the model
@@ -57,7 +57,7 @@ def train_model(train_normalized_data, train_mask, train_params):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     # Load checkpoint if available
-    latest_checkpoint_path = Path(model_folder_unet_deeplab) / "latest_checkpoint.pth"
+    latest_checkpoint_path = Path(model_folder_deeplab) / "latest_checkpoint.pth"
     if latest_checkpoint_path.exists():
         checkpoint = torch.load(latest_checkpoint_path)
         model.load_state_dict(checkpoint["model_state_dict"])
@@ -79,9 +79,9 @@ def train_model(train_normalized_data, train_mask, train_params):
         train_dataset, 
         batch_size=batch_size, 
         shuffle=True, 
-        num_workers=4,  # Adjust based on system performance
-        pin_memory=True,  # Faster CPU → GPU transfer
-        prefetch_factor=2  # Reduces idle time between batches
+        num_workers=4,  
+        pin_memory=True,  
+        prefetch_factor=2
     )
 
     val_loader = DataLoader(
@@ -141,7 +141,7 @@ def train_model(train_normalized_data, train_mask, train_params):
         # Save the trained model and training parameters
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            save_dir = model_folder_unet_deeplab
+            save_dir = model_folder_deeplab
             model_path, _ = save_model_with_metadata(model, optimizer, scheduler, train_params, epoch + 1, save_dir)
             print(f"New best model saved with Val Loss: {best_val_loss:.4f}")
         
@@ -152,7 +152,7 @@ def train_model(train_normalized_data, train_mask, train_params):
             "scheduler_state_dict": scheduler.state_dict(),
             "best_val_loss": best_val_loss
         }
-        torch.save(checkpoint, f"{model_folder_unet_deeplab}/latest_checkpoint.pth")  # Save full checkpoint
+        torch.save(checkpoint, f"{model_folder_deeplab}/latest_checkpoint.pth")  # Save full checkpoint
 
     
     return model_path
