@@ -52,7 +52,8 @@ def train_model(train_normalized_data, train_mask, train_params):
     model = model.to(device)
 
     # Define the loss function and optimizer
-    criterion = nn.CrossEntropyLoss(ignore_index=0)  # Multi-class segmentation
+    # criterion = nn.CrossEntropyLoss(ignore_index=0)  # Multi-class segmentation
+    criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 

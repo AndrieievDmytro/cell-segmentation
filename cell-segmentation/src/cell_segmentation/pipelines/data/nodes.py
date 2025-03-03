@@ -1,6 +1,5 @@
 from pathlib import Path
 from PIL import Image
-from matplotlib import pyplot as plt
 import numpy as np
 import random
 from .tools import  split_data, process_class_folder

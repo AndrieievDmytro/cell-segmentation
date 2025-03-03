@@ -1,19 +1,9 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 class UNet(nn.Module):
     def __init__(self, input_channels=1, num_classes=9, use_groupnorm=True, num_groups=8, upsample_mode="transposed"):
-        """
-        U-Net model for image segmentation.
 
-        Args:
-            input_channels (int): Number of input channels (e.g., 1 for grayscale, 3 for RGB).
-            num_classes (int): Number of output classes.
-            use_groupnorm (bool): Whether to use GroupNorm instead of BatchNorm.
-            num_groups (int): Number of groups for GroupNorm (ignored if using BatchNorm).
-            upsample_mode (str): "transposed" for ConvTranspose2d, "bilinear" for interpolation.
-        """
         super(UNet, self).__init__()
 
         self.use_groupnorm = use_groupnorm
@@ -75,18 +65,7 @@ class UNet(nn.Module):
         return outputs
 
     def _conv_block(self, in_channels, out_channels, dropout=0.0, num_groups=8):
-        """
-        Defines a convolutional block with two Conv2D layers, normalization, ReLU, and dropout.
 
-        Args:
-            in_channels (int): Number of input channels.
-            out_channels (int): Number of output channels.
-            dropout (float): Dropout rate.
-            num_groups (int): Number of groups for GroupNorm.
-
-        Returns:
-            nn.Sequential: A block of layers.
-        """
         norm_layer = (
             nn.GroupNorm(num_groups, out_channels)
             if self.use_groupnorm
@@ -103,16 +82,7 @@ class UNet(nn.Module):
         )
 
     def _upsample(self, in_channels, out_channels):
-        """
-        Defines an upsampling layer using either ConvTranspose2D or bilinear interpolation.
 
-        Args:
-            in_channels (int): Number of input channels.
-            out_channels (int): Number of output channels.
-
-        Returns:
-            nn.Module: An upsampling module.
-        """
         if self.upsample_mode == "transposed":
             # Use ConvTranspose2D for learnable upsampling
             return nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
@@ -124,9 +94,7 @@ class UNet(nn.Module):
             )
         
     def _initialize_weights(self):
-        """
-        Initializes model weights using Kaiming Normal initialization.
-        """
+
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
